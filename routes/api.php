@@ -26,5 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sessions/{id}/attendance', [PrivateUserController::class, 'getSessionAttendance']);
     Route::get('/lists/{list}/session-titles', [PrivateUserController::class, 'loadSessionNames']);
     Route::delete('/lists/{list}', [PrivateUserController::class, 'deleteList']);
+    Route::delete('/lists/{list}/people/{person}', [PrivateUserController::class, 'destroy']);
+
 
 });

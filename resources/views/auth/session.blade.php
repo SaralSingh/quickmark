@@ -115,7 +115,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold text-dark" href="/dashboard">
-                <i class="fa-solid fa-check-double me-2"></i> Praman
+                <i class="fa-solid fa-check-double me-2"></i> QuickMark
             </a>
             <div class="d-flex align-items-center">
                 <span class="badge bg-danger animate-pulse">Live Session</span>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Praman v2 | Universal Presence Register</title>
+    <title>QuickMark | Universal Presence Register</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -60,7 +60,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fa-solid fa-check-double me-2"></i> Praman <span class="badge bg-dark ms-1" style="font-size: 0.6em; vertical-align: top;">v2.0</span>
+                <i class="fa-solid fa-check-double me-2"></i> QuickMark <span class="badge bg-dark ms-1" style="font-size: 0.6em; vertical-align: top;"></span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -88,7 +88,7 @@
                     <span class="badge bg-secondary mb-3 text-uppercase tracking-wide">Presence Register Engine</span>
                     <h1 class="display-4 fw-bold mb-4 text-dark">Universal Presence Tracking.<br>Simplified.</h1>
                     <p class="lead text-secondary mb-5">
-                        Praman is not just an attendance app for students. It is a rule-driven engine for classes, teams, workshops, and events. 
+                        QuickMark is not just an attendance app for students. It is a rule-driven engine for classes, teams, workshops, and events. 
                         <br><strong>Create list → Start session → Mark presence.</strong>
                     </p>
                     {{-- <div class="d-flex justify-content-center gap-3">
@@ -222,7 +222,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <h5 class="fw-bold mb-3">Praman v2</h5>
+                    <h5 class="fw-bold mb-3">QuickMark</h5>
                     <p class="text-muted small">A properly engineered presence register engine. Version 2.0 focuses on clean database design and rule-driven tracking.</p>
                 </div>
                 <div class="col-md-2 mb-4">
@@ -242,7 +242,7 @@
                     </ul>
                 </div>
                 <div class="col-md-4 mb-4 text-md-end">
-                    <p class="small text-muted">&copy; 2026 Praman Project.<br>All rights reserved.</p>
+                    <p class="small text-muted">&copy; 2026 QuickMark Project.<br>All rights reserved.</p>
                 </div>
             </div>
         </div>

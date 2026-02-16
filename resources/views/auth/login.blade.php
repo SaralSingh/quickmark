@@ -62,7 +62,7 @@
                 
                 <div class="text-center mb-4">
                     <a href="/" class="text-dark text-decoration-none fs-4 fw-bold">
-                        <i class="fa-solid fa-check-double me-2"></i> Praman <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;">v2.0</span>
+                        <i class="fa-solid fa-check-double me-2"></i> QuickMark <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;"></span>
                     </a>
                     <p class="text-secondary mt-2 mb-0">Welcome back. Please sign in.</p>
                 </div>

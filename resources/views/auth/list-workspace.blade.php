@@ -102,7 +102,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold text-dark" href="/dashboard">
-                <i class="fa-solid fa-check-double me-2"></i> Praman <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;">v2.0</span>
+                <i class="fa-solid fa-check-double me-2"></i> QuickMark <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;"></span>
             </a>
 <div class="ms-auto">
     <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
@@ -301,6 +301,40 @@
         .catch(err => console.error('Error loading session titles:', err));
     });
 
+    async function deletePerson(personId, personName) {
+    const confirmDelete = confirm(`Delete "${personName}" ?`);
+    if (!confirmDelete) return;
+
+    try {
+        const response = await fetch(
+            `/api/lists/${listId}/people/${personId}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                credentials: 'same-origin'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.message || 'Failed to delete person');
+            return;
+        }
+
+        // ✅ Reload list after delete
+        loadPeople();
+
+    } catch (err) {
+        console.error(err);
+        alert('Server error while deleting person');
+    }
+}
+
+
     // --- LOAD PEOPLE ---
     function loadPeople() {
         fetch(`/api/lists/${listId}/people`, {
@@ -325,15 +359,24 @@
 
             emptyState.classList.add('d-none');
 
-            people.forEach(person => {
-                const initials = person.name.slice(0, 2).toUpperCase();
-                ul.innerHTML += `
-                    <li class="list-group-item d-flex align-items-center gap-3">
-                        <div class="avatar-initial">${initials}</div>
-                        <div class="fw-medium text-dark">${person.name}</div>
-                    </li>
-                `;
-            });
+people.forEach(person => {
+    const initials = person.name.slice(0, 2).toUpperCase();
+
+    ul.innerHTML += `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar-initial">${initials}</div>
+                <div class="fw-medium text-dark">${person.name}</div>
+            </div>
+
+            <button class="btn btn-sm btn-outline-danger"
+                onclick="deletePerson(${person.id}, '${person.name}')">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </li>
+    `;
+});
+
         })
         .catch(err => console.error('Error loading people:', err));
     }

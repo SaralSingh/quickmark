@@ -101,7 +101,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold text-dark" href="/dashboard">
-                <i class="fa-solid fa-check-double me-2"></i> Praman <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;">v2.0</span>
+                <i class="fa-solid fa-check-double me-2"></i> QuickMark <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;"></span>
             </a>
             <div class="ms-auto">
                 <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='/list-workspace'">

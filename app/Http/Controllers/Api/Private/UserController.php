@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Api\Private;
 
-use App\Models\User;
-use App\Models\Person;
-use App\Models\Presence;
-use App\Models\ListModel;
-use Illuminate\Http\Request;
-use App\Models\PramanSession;
-use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Models\ListModel;
+use App\Models\Person;
+use App\Models\PramanSession;
+use App\Models\Presence;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+
 
 
 class UserController extends Controller
@@ -202,108 +204,148 @@ class UserController extends Controller
 
     public function storePresence(Request $request, PramanSession $session)
     {
-        $request->validate([
-            'person_id' => 'required|exists:people,id',
-            'is_present' => 'required|boolean',
-            'final_save' => 'nullable|boolean'
-        ]);
-
+        // 1. Block closed session early
         if ($session->status === 'closed') {
             return response()->json([
                 'message' => 'Session already closed'
             ], 403);
         }
 
-        Presence::where('praman_session_id', $session->id)
-            ->where('person_id', $request->person_id)
-            ->update([
-                'is_present' => $request->is_present
-            ]);
+        // 2. Validate with logical + ownership rules
+        $validated = $request->validate([
+            'person_id' => [
+                'required',
+                Rule::exists('people', 'id')
+                    ->whereNull('deleted_at')
+                    ->where('list_id', $session->list_id),
+            ],
+            'is_present' => 'required|boolean',
+            'final_save' => 'nullable|boolean',
+        ]);
 
-        // If this is last call → close session
-        if ($request->final_save) {
-            $session->update(['status' => 'closed']);
+        // 3. Atomic write (no race conditions)
+        DB::transaction(function () use ($validated, $session) {
+
+            $updated = Presence::where('praman_session_id', $session->id)
+                ->where('person_id', $validated['person_id'])
+                ->update([
+                    'is_present' => $validated['is_present'],
+                ]);
+
+            if ($updated === 0) {
+                abort(404, 'Presence record not found');
+            }
+
+            // 4. Close session if final save
+            if (!empty($validated['final_save'])) {
+                $session->update(['status' => 'closed']);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Updated successfully'
+        ]);
+    }
+
+    public function getSessionAttendance(string $id)
+    {
+        $session = PramanSession::select('id', 'title', 'session_date', 'status')
+            ->findOrFail($id);
+
+        $presences = Presence::with(['person:id,name'])
+            ->where('praman_session_id', $id)
+            ->get();
+
+        $people = $presences->map(function ($p) {
+            return [
+                'id' => $p->person->id,
+                'name' => $p->person->name,
+                'is_present' => $p->is_present,
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'session' => [
+                'id' => $session->id,
+                'title' => $session->title,
+                'session_date' => $session->session_date,
+                'status' => $session->status,
+            ],
+            'people' => $people
+        ], 200);
+    }
+
+
+    public function loadSessionNames(string $id)
+    {
+        $sessions = PramanSession::where('list_id', $id)
+            ->select('id', 'title', 'session_date')
+            ->orderBy('session_date', 'desc')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'sessions' => $sessions
+        ], 200);
+    }
+
+
+    public function deleteList(ListModel $list)
+    {
+        // 1) Ownership via policy
+        $this->authorize('delete', $list);
+
+        // 2) Historical integrity rule
+        if ($list->sessions()->exists()) {
+            return response()->json([
+                'message' => 'This list has session history and cannot be deleted.'
+            ], 422);
         }
 
-        return response()->json(['message' => 'Updated']);
-    }
+        // 3) Soft delete (archive)
+        $list->delete();
 
-public function getSessionAttendance(string $id)
-{
-    $session = PramanSession::select('id', 'title', 'session_date', 'status')
-        ->findOrFail($id);
-
-    $presences = Presence::with(['person:id,name'])
-        ->where('praman_session_id', $id)
-        ->get();
-
-    $people = $presences->map(function ($p) {
-        return [
-            'id' => $p->person->id,
-            'name' => $p->person->name,
-            'is_present' => $p->is_present,
-        ];
-    });
-
-    return response()->json([
-        'status' => true,
-        'session' => [
-            'id' => $session->id,
-            'title' => $session->title,
-            'session_date' => $session->session_date,
-            'status' => $session->status,
-        ],
-        'people' => $people
-    ], 200);
-}
-
-
-public function loadSessionNames(string $id)
-{
-    $sessions = PramanSession::where('list_id', $id)
-        ->select('id', 'title', 'session_date')
-        ->orderBy('session_date', 'desc')
-        ->get();
-
-    return response()->json([
-        'status' => true,
-        'sessions' => $sessions
-    ], 200);
-}
-
-
-public function deleteList(ListModel $list)
-{
-    // 1) Ownership via policy
-    $this->authorize('delete', $list);
-
-    // 2) Historical integrity rule
-    if ($list->sessions()->exists()) {
         return response()->json([
-            'message' => 'This list has session history and cannot be deleted.'
-        ], 422);
+            'message' => 'List archived successfully.'
+        ]);
     }
 
-    // 3) Soft delete (archive)
-    $list->delete();
-
-    return response()->json([
-        'message' => 'List archived successfully.'
-    ]);
-}
 
 
 
+    public function logout(Request $request)
+    {
+        Auth::logout();                       // user logout
+        $request->session()->invalidate();    // session destroy
+        $request->session()->regenerateToken(); // new CSRF token
 
-public function logout(Request $request)
-{
-    Auth::logout();                       // user logout
-    $request->session()->invalidate();    // session destroy
-    $request->session()->regenerateToken(); // new CSRF token
+        return response()->json([
+            'status' => true,
+            'message' => 'Logged out successfully'
+        ]);
+    }
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Logged out successfully'
-    ]);
-}
+
+    public function destroy(ListModel $list, Person $person)
+    {
+        // 🔒 Ownership + safety check
+        if ($person->list_id !== $list->id) {
+            abort(404, 'Person not found in this list');
+        }
+
+        // ❌ Already deleted
+        if ($person->deleted_at !== null) {
+            return response()->json([
+                'message' => 'Person already deleted'
+            ], 409);
+        }
+
+        // ✅ Soft delete
+        $person->delete();
+
+        return response()->json([
+            'message' => 'Person deleted successfully'
+        ]);
+    }
 }
