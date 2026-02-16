@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Session Report | Praman v2</title>
+    <title>Session Report | QuickMark</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -25,14 +25,12 @@
             color: #334155;
         }
 
-        /* Navbar */
         .navbar {
             background-color: #ffffff;
             border-bottom: 1px solid var(--bs-border-color);
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
 
-        /* Cards */
         .card {
             border: 1px solid var(--bs-border-color);
             border-radius: 12px;
@@ -41,13 +39,8 @@
             overflow: hidden;
         }
 
-        /* Stats Cards */
-        .stat-card {
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
         
         .icon-box {
             width: 48px; height: 48px;
@@ -56,14 +49,12 @@
             font-size: 1.25rem;
         }
 
-        /* List Styling */
         .list-group-item {
             border-left: none; border-right: none;
             border-color: #f1f5f9;
             padding: 1rem 1.25rem;
             transition: background-color 0.15s;
         }
-        .list-group-item:first-child { border-top: none; }
         .list-group-item:hover { background-color: #f8fafc; }
 
         .avatar-initial {
@@ -77,7 +68,6 @@
             margin-right: 1rem;
         }
 
-        /* Status Pills */
         .badge-present {
             background-color: rgba(var(--bs-success-rgb), 0.1);
             color: rgb(var(--bs-success-rgb));
@@ -101,7 +91,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold text-dark" href="/dashboard">
-                <i class="fa-solid fa-check-double me-2"></i> QuickMark <span class="badge bg-dark ms-1" style="font-size: 0.5em; vertical-align: top;"></span>
+                <i class="fa-solid fa-check-double me-2"></i> QuickMark
             </a>
             <div class="ms-auto">
                 <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='/list-workspace'">
@@ -115,7 +105,7 @@
         
         <div class="d-flex justify-content-between align-items-end mb-4">
             <div>
-                <span class="text-uppercase text-secondary small fw-bold ls-1">Session Report</span>
+                <span class="text-uppercase text-secondary small fw-bold">Session Report</span>
                 <h2 class="fw-bold text-dark mt-1" id="page-title">Session Details</h2>
                 <div class="text-secondary small">
                     <i class="fa-regular fa-calendar me-1"></i> <span id="session-date-display">Loading date...</span>
@@ -173,10 +163,17 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3 border-bottom">
                 <div class="row g-2 align-items-center">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <h5 class="fw-bold mb-0 text-dark">Attendance List</h5>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                        <select id="status-filter" class="form-select form-select-sm bg-light" onchange="filterList()">
+                            <option value="all">All Records</option>
+                            <option value="present">Present Only</option>
+                            <option value="absent">Absent Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="fa-solid fa-search text-secondary"></i>
@@ -194,135 +191,104 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
 <script>
     const sessionId = {{ $sessionId }};
-
-    let allPeopleData = []; // Store data for searching/filtering
+    let allPeopleData = []; 
 
     function loadSessionPeople() {
         fetch(`/api/sessions/${sessionId}/attendance`, {
-            headers: {
-                'Accept': 'application/json'
-            },
+            headers: { 'Accept': 'application/json' },
             credentials: 'same-origin'
         })
         .then(res => res.json())
         .then(data => {
-
-            // --- Session Date (safe timezone handling) ---
             if (data.session && data.session.session_date) {
-                const rawDate = data.session.session_date;
-                const d = new Date(rawDate + 'T00:00:00');
-                const formatted = d.toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                const d = new Date(data.session.session_date + 'T00:00:00');
+                document.getElementById('session-date-display').innerText = d.toLocaleDateString(undefined, {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                 });
-                document.getElementById('session-date-display').innerText = formatted;
+                document.getElementById('page-title').innerText = data.session.title || 'Session Details';
             }
 
             const container = document.getElementById('people-list-container');
-
-            // 1. Handle Empty Data
             if (!data.people || data.people.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-5">
-                        <i class="fa-regular fa-folder-open fa-3x text-secondary mb-3"></i>
-                        <p class="text-secondary">No records found for this session.</p>
-                    </div>`;
+                container.innerHTML = `<div class="text-center py-5"><p class="text-secondary">No records found.</p></div>`;
                 return;
             }
 
-            // 2. Store data globally for search features
             allPeopleData = data.people;
 
-            // 3. Update Header Info
-            if (data.session) {
-                document.getElementById('page-title').innerText =
-                    data.session.title || 'Session Details';
-            }
-
-            // 4. Calculate Stats
+            // Update Stats
             const total = allPeopleData.length;
-            const present = allPeopleData.filter(p => p.is_present).length;
+            const present = allPeopleData.filter(p => p.is_present == true || p.is_present == 1).length;
             const absent = total - present;
 
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-present').innerText = present;
             document.getElementById('stat-absent').innerText = absent;
 
-            // 5. Render List
             renderList(allPeopleData);
         })
         .catch(err => {
             console.error(err);
-            document.getElementById('people-list-container').innerHTML = `
-                <div class="text-center py-5 text-danger">
-                    <i class="fa-solid fa-circle-exclamation mb-2 fa-2x"></i>
-                    <p>Failed to load session data.</p>
-                </div>`;
+            document.getElementById('people-list-container').innerHTML = `<div class="text-center py-5 text-danger"><p>Failed to load data.</p></div>`;
         });
     }
 
-    // Render Function
     function renderList(people) {
         const container = document.getElementById('people-list-container');
-
         if (people.length === 0) {
-            container.innerHTML =
-                '<div class="p-4 text-center text-secondary">No matching results.</div>';
+            container.innerHTML = '<div class="p-4 text-center text-secondary">No matching results found.</div>';
             return;
         }
 
         let html = `<ul class="list-group list-group-flush">`;
-
         people.forEach(p => {
+            const isPresent = p.is_present == true || p.is_present == 1;
             const initials = p.name.slice(0, 2).toUpperCase();
-            const badgeClass = p.is_present ? 'badge-present' : 'badge-absent';
-            const badgeIcon = p.is_present
-                ? '<i class="fa-solid fa-check me-1"></i>'
-                : '<i class="fa-solid fa-xmark me-1"></i>';
-            const badgeText = p.is_present ? 'Present' : 'Absent';
-            const rowBg = p.is_present ? '' : 'bg-light';
+            const badgeClass = isPresent ? 'badge-present' : 'badge-absent';
+            const badgeText = isPresent ? 'Present' : 'Absent';
+            const badgeIcon = isPresent ? 'check' : 'xmark';
+            const rowBg = isPresent ? '' : 'bg-light';
 
             html += `
                 <li class="list-group-item d-flex justify-content-between align-items-center ${rowBg}">
                     <div class="d-flex align-items-center">
                         <div class="avatar-initial">${initials}</div>
-                        <div>
-                            <div class="fw-semibold text-dark">${p.name}</div>
-                        </div>
+                        <div class="fw-semibold text-dark">${p.name}</div>
                     </div>
                     <span class="${badgeClass} small">
-                        ${badgeIcon}${badgeText}
+                        <i class="fa-solid fa-${badgeIcon} me-1"></i>${badgeText}
                     </span>
-                </li>
-            `;
+                </li>`;
         });
-
         html += `</ul>`;
         container.innerHTML = html;
     }
 
-    // Client-Side Search
     function filterList() {
         const query = document.getElementById('search-input').value.toLowerCase();
-        const filtered = allPeopleData.filter(p =>
-            p.name.toLowerCase().includes(query)
-        );
+        const statusFilter = document.getElementById('status-filter').value;
+
+        const filtered = allPeopleData.filter(p => {
+            const matchesSearch = p.name.toLowerCase().includes(query);
+            const isPresent = p.is_present == true || p.is_present == 1;
+            
+            let matchesStatus = true;
+            if (statusFilter === 'present') matchesStatus = isPresent;
+            if (statusFilter === 'absent') matchesStatus = !isPresent;
+
+            return matchesSearch && matchesStatus;
+        });
+
         renderList(filtered);
     }
 
-    // Init
     loadSessionPeople();
 </script>
-
-
 </body>
 </html>
