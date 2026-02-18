@@ -204,14 +204,14 @@ class UserController extends Controller
 
     public function storePresence(Request $request, PramanSession $session)
     {
-        // 1. Block closed session early
+        // 1️⃣ Block closed session immediately (immutability rule)
         if ($session->status === 'closed') {
             return response()->json([
                 'message' => 'Session already closed'
             ], 403);
         }
 
-        // 2. Validate with logical + ownership rules
+        // 2️⃣ Validate input + ownership + soft-delete safety
         $validated = $request->validate([
             'person_id' => [
                 'required',
@@ -223,58 +223,78 @@ class UserController extends Controller
             'final_save' => 'nullable|boolean',
         ]);
 
-        // 3. Atomic write (no race conditions)
+        // 3️⃣ Atomic transaction (consistency guaranteed)
         DB::transaction(function () use ($validated, $session) {
 
+            // 🔑 Fetch person ONCE (authoritative source)
+            $person = Person::select('id', 'name')
+                ->where('id', $validated['person_id'])
+                ->where('list_id', $session->list_id)
+                ->firstOrFail();
+
+            // 🔑 Update presence + SNAPSHOT person_name
             $updated = Presence::where('praman_session_id', $session->id)
-                ->where('person_id', $validated['person_id'])
+                ->where('person_id', $person->id)
                 ->update([
-                    'is_present' => $validated['is_present'],
+                    'is_present'  => $validated['is_present'],
+                    'person_name' => $person->name, // HISTORY SNAPSHOT
                 ]);
 
+            // 🔴 Presence row must already exist
             if ($updated === 0) {
                 abort(404, 'Presence record not found');
             }
 
-            // 4. Close session if final save
+            // 4️⃣ Final save → close session permanently
             if (!empty($validated['final_save'])) {
-                $session->update(['status' => 'closed']);
+                $session->update([
+                    'status' => 'closed'
+                ]);
             }
         });
 
         return response()->json([
-            'message' => 'Updated successfully'
-        ]);
+            'message' => 'Attendance updated successfully'
+        ], 200);
     }
 
     public function getSessionAttendance(string $id)
     {
+        // 1️⃣ Fetch session (authoritative)
         $session = PramanSession::select('id', 'title', 'session_date', 'status')
             ->findOrFail($id);
 
-        $presences = Presence::with(['person:id,name'])
+        // 2️⃣ Fetch attendance WITHOUT joins (history-safe)
+        $presences = Presence::select(
+            'person_id',
+            'person_name',
+            'is_present'
+        )
             ->where('praman_session_id', $id)
             ->get();
 
+        // 3️⃣ Map response (null-safe forever)
         $people = $presences->map(function ($p) {
             return [
-                'id' => $p->person->id,
-                'name' => $p->person->name,
+                'id'         => $p->person_id,      // may be null
+                'name'       => $p->person_name,    // snapshot
                 'is_present' => $p->is_present,
+                'is_deleted' => $p->person_id === null,
             ];
         });
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'session' => [
-                'id' => $session->id,
-                'title' => $session->title,
+                'id'           => $session->id,
+                'title'        => $session->title,
                 'session_date' => $session->session_date,
-                'status' => $session->status,
+                'status'       => $session->status,
             ],
-            'people' => $people
+            'people' => $people,
         ], 200);
     }
+
 
 
     public function loadSessionNames(string $id)
@@ -327,9 +347,9 @@ class UserController extends Controller
     }
 
 
-    public function destroy(ListModel $list, Person $person)
+    public function deletePerson(ListModel $list, Person $person)
     {
-        // 🔒 Ownership + safety check
+        // 🔒 Ownership check
         if ($person->list_id !== $list->id) {
             abort(404, 'Person not found in this list');
         }
@@ -341,11 +361,20 @@ class UserController extends Controller
             ], 409);
         }
 
-        // ✅ Soft delete
-        $person->delete();
+        DB::transaction(function () use ($person) {
+
+            // 1️⃣ Soft delete person
+            $person->delete();
+
+            // 2️⃣ Detach from historical records (IMPORTANT)
+            Presence::where('person_id', $person->id)
+                ->update([
+                    'person_id' => null
+                ]);
+        });
 
         return response()->json([
             'message' => 'Person deleted successfully'
-        ]);
+        ], 200);
     }
 }
