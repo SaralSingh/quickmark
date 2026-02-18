@@ -2,7 +2,7 @@
 
 ## Theme
 
-Praman is a universal presence‑register engine. It allows any user to create a list of people, start a session, and record who was present or absent for that session.
+QuickMark is a universal presence‑register engine. It allows any user to create a list of people, start a session, and record who was present or absent for that session.
 
 This is **not** an attendance app for students. It is a generic system that works for any group: classes, teams, events, meetings, or workshops.
 
@@ -137,4 +137,4 @@ Praman will be built as a Laravel API‑first system. UI will be added later. Al
 
 ## Versioning
 
-This project starts as **Praman v2.0** — a rebuilt, properly engineered version of an earlier attendance Hub project, focused on clean database design and rule‑driven presence tracking.
+This project starts as **QuickMark** — a rebuilt, properly engineered version of an earlier attendance Hub project, focused on clean database design and rule‑driven presence tracking.
