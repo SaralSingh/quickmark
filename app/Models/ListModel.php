@@ -17,8 +17,12 @@ class ListModel extends Model
     ];
 
     public function sessions()
-{
-    return $this->hasMany(PramanSession::class, 'list_id');
-}
+    {
+        return $this->hasMany(PramanSession::class, 'list_id');
+    }
 
+    public function people()
+    {
+        return $this->hasMany(Person::class, 'list_id');
+    }
 }

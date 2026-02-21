@@ -87,36 +87,54 @@ class UserController extends Controller
 
     public function bulkAddPeople(Request $request, $listId)
     {
+        // 1. Validate request payload
         $validated = $request->validate([
-            'names' => ['required', 'array'],
-            'names.*' => ['required', 'string', 'max:100']
+            'names'   => ['required', 'array', 'min:1', 'max:100'],
+            'names.*' => ['required', 'string', 'max:100'],
         ]);
 
-        // Optional safety: ensure list belongs to this user
-        $list = $request->user()->lists()->where('id', $listId)->firstOrFail();
+        // 2. Ensure list belongs to authenticated user
+        $list = $request->user()->lists()->findOrFail($listId);
 
-        $data = [];
+        // 3. Transaction to avoid race condition
+        DB::transaction(function () use ($list, $validated) {
 
-        foreach ($validated['names'] as $name) {
-            $data[] = [
-                'list_id' => $listId,
-                'name' => $name,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
+            // Lock list row (important for concurrent requests)
+            $list->lockForUpdate();
 
-        Person::insert($data);
+            $existingCount = $list->people()->count();
+            $incomingCount = count($validated['names']);
+
+            // HARD CAP: list can never exceed 100 people
+            if ($existingCount + $incomingCount > 100) {
+                abort(422, 'This list can contain a maximum of 100 people.');
+            }
+
+            $data = [];
+
+            foreach ($validated['names'] as $name) {
+                $data[] = [
+                    'list_id'    => $list->id,
+                    'name'       => trim($name),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            Person::insert($data);
+        });
 
         return response()->json([
-            'status' => true,
-            'message' => 'People added successfully'
+            'status'  => true,
+            'message' => 'People added successfully',
         ], 201);
     }
 
 
-    public function getPeople($listId)
+    public function getPeople(Request $request, $listId)
     {
+        $list = $request->user()->lists()->findOrFail($listId);
+
         $people = Person::where('list_id', $listId)->get();
 
         return response()->json([
