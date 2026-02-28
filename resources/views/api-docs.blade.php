@@ -46,6 +46,7 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .method-badge {
@@ -66,6 +67,7 @@
         font-size: 1.05rem;
         color: var(--bs-primary);
         font-weight: 600;
+        word-break: break-word;
     }
 
     .endpoint-body {
@@ -131,7 +133,7 @@
                     <i class="fa-solid fa-circle-info text-primary mt-1 me-3 fa-lg"></i>
                     <div>
                         <h5 class="fw-bold text-dark mb-1">Base URL</h5>
-                        <code class="fs-6 bg-light text-dark px-2 py-1 rounded border">https://yourdomain.com/api</code>
+                        <code class="fs-6 bg-light text-dark px-2 py-1 rounded border text-break">https://yourdomain.com/api</code>
                         <p class="mb-0 mt-2 text-secondary small">All API requests must include the `Accept: application/json` header. Stateful requests like `POST` and `DELETE` from the browser must also include the `X-CSRF-TOKEN` header if relying on session cookies.</p>
                     </div>
                 </div>

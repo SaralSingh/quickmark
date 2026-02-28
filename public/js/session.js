@@ -126,32 +126,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            for (let i = 0; i < total; i++) {
-                const personId = allPeopleIds[i];
-                const isPresent = markedSet.has(personId) ? 1 : 0;
-                const isLast = (i === total - 1);
+            if (statusText) statusText.innerText = `Saving attendance for ${total} people...`;
+            if (progressBar) progressBar.style.width = `50%`;
 
-                const pct = Math.round(((i + 1) / total) * 100);
-                if (progressBar) progressBar.style.width = `${pct}%`;
-                if (statusText) statusText.innerText = `Saving record ${i + 1} of ${total}...`;
+            // Collect all presences
+            const presences = allPeopleIds.map(personId => ({
+                person_id: personId,
+                is_present: markedSet.has(personId) ? 1 : 0
+            }));
 
-                const res = await fetch(`/api/sessions/${sessionId}/presence`, {
-                    method: 'POST',
-                    headers: jsonHeaders(true),
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        person_id: personId,
-                        is_present: isPresent,
-                        final_save: isLast ? 1 : 0
-                    })
-                });
+            // Send a single batch request
+            const res = await fetch(`/api/sessions/${sessionId}/presence`, {
+                method: 'POST',
+                headers: jsonHeaders(true),
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    presences: presences,
+                    final_save: 1
+                })
+            });
 
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.message || "Server Error");
-                }
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "Server Error");
             }
 
+            if (progressBar) progressBar.style.width = `100%`;
             if (statusText) statusText.innerText = "Done! Redirecting...";
 
             setTimeout(() => {

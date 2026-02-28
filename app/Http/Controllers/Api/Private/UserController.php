@@ -243,38 +243,65 @@ class UserController extends Controller
             ], 403);
         }
 
-        // 2️⃣ Validate input + ownership + soft-delete safety
+        // 2️⃣ Validate input + ownership + soft-delete safety for both batch and single
         $validated = $request->validate([
-            'person_id' => [
+            'presences' => 'sometimes|array',
+            'presences.*.person_id' => [
                 'required',
                 Rule::exists('people', 'id')
                     ->whereNull('deleted_at')
                     ->where('list_id', $session->list_id),
             ],
-            'is_present' => 'required|boolean',
+            'presences.*.is_present' => 'required|boolean',
+            
+            // Fallback for single record format
+            'person_id' => [
+                'sometimes',
+                Rule::exists('people', 'id')
+                    ->whereNull('deleted_at')
+                    ->where('list_id', $session->list_id),
+            ],
+            'is_present' => 'sometimes|boolean',
+            
             'final_save' => 'nullable|boolean',
         ]);
 
+        $presencesData = $request->has('presences') ? $validated['presences'] : [];
+        if ($request->has('person_id') && $request->has('is_present')) {
+            $presencesData[] = [
+                'person_id' => $validated['person_id'],
+                'is_present' => $validated['is_present']
+            ];
+        }
+
         // 3️⃣ Atomic transaction (consistency guaranteed)
-        DB::transaction(function () use ($validated, $session) {
+        DB::transaction(function () use ($validated, $session, $presencesData) {
 
-            // 🔑 Fetch person ONCE (authoritative source)
-            $person = Person::select('id', 'name')
-                ->where('id', $validated['person_id'])
-                ->where('list_id', $session->list_id)
-                ->firstOrFail();
+            if (!empty($presencesData)) {
+                $personIds = collect($presencesData)->pluck('person_id')->unique();
+                
+                // 🔑 Fetch people ONCE (authoritative source)
+                $people = Person::select('id', 'name')
+                    ->whereIn('id', $personIds)
+                    ->where('list_id', $session->list_id)
+                    ->get()
+                    ->keyBy('id');
 
-            // 🔑 Update presence + SNAPSHOT person_name
-            $updated = Presence::where('praman_session_id', $session->id)
-                ->where('person_id', $person->id)
-                ->update([
-                    'is_present'  => $validated['is_present'],
-                    'person_name' => $person->name, // HISTORY SNAPSHOT
-                ]);
+                foreach ($presencesData as $data) {
+                    $personId = $data['person_id'];
+                    
+                    if (!isset($people[$personId])) {
+                        continue;
+                    }
 
-            // 🔴 Presence row must already exist
-            if ($updated === 0) {
-                abort(404, 'Presence record not found');
+                    // 🔑 Update presence + SNAPSHOT person_name
+                    Presence::where('praman_session_id', $session->id)
+                        ->where('person_id', $personId)
+                        ->update([
+                            'is_present'  => $data['is_present'],
+                            'person_name' => $people[$personId]->name, // HISTORY SNAPSHOT
+                        ]);
+                }
             }
 
             // 4️⃣ Final save → close session permanently
