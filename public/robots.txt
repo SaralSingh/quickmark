@@ -1,2 +1,9 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /dashboard
+Disallow: /list-workspace
+Disallow: /session/
+Disallow: /session-view/
+Disallow: /api/
+
+Sitemap: https://qmark.alwaysdata.net/sitemap.xml

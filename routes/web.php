@@ -12,6 +12,10 @@ Route::get('/api-docs', function () {
     return view('api-docs');
 })->name('api-docs');
 
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy.policy');
+
 Route::middleware('guest')->group(function () {
     Route::get('/register', fn() => view('auth.register'))->name('register');
     Route::post('/register', [UserController::class, 'register']);

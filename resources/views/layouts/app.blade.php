@@ -7,6 +7,12 @@
     
     <title>@yield('title', 'QuickMark | Dashboard')</title>
     
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@yield('meta_description', 'QuickMark Dashboard - Manage your lists, sessions, and presence accurately. Developed by Saral Singh.')">
+    <meta name="author" content="Saral Singh">
+    <link rel="author" href="https://saralsingh.space">
+    <meta name="robots" content="noindex, nofollow"> <!-- Prevent indexing of authenticated pages -->
+
     <!-- External Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">

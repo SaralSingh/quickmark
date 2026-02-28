@@ -7,6 +7,36 @@
     
     <title>@yield('title', 'QuickMark | Universal Presence')</title>
     
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@yield('meta_description', 'QuickMark is an API-first presence marking system designed for simplicity and reliability. Built by Saral Singh.')">
+    <meta name="keywords" content="QuickMark, Attendance System, Presence Marking, Saral Singh, Backend Developer, PHP, Laravel">
+    <meta name="author" content="Saral Singh">
+    <link rel="author" href="https://saralsingh.space">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="@yield('title', 'QuickMark | Universal Presence')">
+    <meta property="og:description" content="@yield('meta_description', 'QuickMark is an API-first presence marking system designed for simplicity and reliability. Built by Saral Singh.')">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "WebSite",
+      "name": "QuickMark",
+      "url": "{{ url('/') }}",
+      "description": "API-first presence marking system designed for simplicity and reliability.",
+      "author": {
+        "@@type": "Person",
+        "name": "Saral Singh",
+        "jobTitle": "Backend Developer (PHP & Laravel)",
+        "url": "https://saralsingh.space"
+      }
+    }
+    </script>
+
     <!-- External Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
