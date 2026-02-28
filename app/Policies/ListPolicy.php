@@ -21,7 +21,7 @@ class ListPolicy
      */
     public function view(User $user, ListModel $listModel): bool
     {
-        return false;
+        return $user->id === $listModel->user_id;
     }
 
     /**
@@ -37,7 +37,7 @@ class ListPolicy
      */
     public function update(User $user, ListModel $listModel): bool
     {
-        return false;
+        return $user->id === $listModel->user_id;
     }
 
     /**

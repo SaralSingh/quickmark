@@ -6,7 +6,11 @@ use App\Http\Controllers\AuthController\UserController;
 
 Route::get('/', function () {
     return view('home');
-});
+})->name('home');
+
+Route::get('/api-docs', function () {
+    return view('api-docs');
+})->name('api-docs');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', fn() => view('auth.register'))->name('register');
@@ -20,8 +24,7 @@ Route::middleware('guest')->group(function () {
 
 
 Route::middleware('auth')->group(function () {
-
-    Route::get('/dashboard', fn() => view('auth.dashboard'));
+    Route::get('/dashboard', fn() => view('auth.dashboard'))->name('dashboard');
 
     Route::get('/list-workspace', fn() => view('auth.list-workspace'));
 

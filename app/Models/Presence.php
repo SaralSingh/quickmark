@@ -11,6 +11,7 @@ class Presence extends Model
     protected $fillable = [
         'praman_session_id',
         'person_id',
+        'person_name',
         'is_present',
     ];
         protected $casts = [

@@ -1,0 +1,76 @@
+/* Shared Variables and Component overrides */
+:root {
+    --bs-primary: #0f172a; /* Slate 900 - Serious Dark */
+    --bs-secondary: #475569; /* Slate 600 */
+    --bs-body-bg: #f8fafc; /* Slate 50 */
+    --bs-card-border: #e2e8f0;
+}
+
+body {
+    background-color: var(--bs-body-bg);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #334155;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Auth Cards (Login/Register) */
+.auth-card {
+    width: 100%;
+    max-width: 450px;
+    border: none;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* General Layout Adjustments */
+.navbar {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #1e293b;
+    border-color: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Card Improvements */
+.card {
+    border: 1px solid var(--bs-card-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.dropdown-item {
+    border-radius: 6px;
+    margin: 2px 8px;
+    width: auto;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+}
+
+.dropdown-menu {
+    border-radius: 10px;
+}

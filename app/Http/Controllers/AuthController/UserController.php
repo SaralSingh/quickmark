@@ -45,8 +45,7 @@ public function login(Request $request)
     ]);
 
     if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
-
+        // Removed session regeneration since this is a stateless API route without session middleware
         return response()->json([
             'status' => true
         ]);

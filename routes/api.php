@@ -2,15 +2,16 @@
 
 use App\Http\Controllers\Api\Private\UserController as PrivateUserController;
 use App\Http\Controllers\AuthController\UserController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SentimentController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 
-
+Route::post('/sentiment/analyze', [SentimentController::class, 'analyze']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Route::get('/user', fn (Request $r) => $r->user());
 
     Route::post('lists', [PrivateUserController::class, 'createList']);

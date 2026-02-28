@@ -1,0 +1,47 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   app/Http/Controllers/Api/Private/UserController.php
+	modified:   app/Http/Controllers/AuthController/UserController.php
+	new file:   app/Http/Controllers/SentimentController.php
+	modified:   app/Models/Presence.php
+	new file:   public/css/app.css
+	new file:   public/js/auth.js
+	new file:   public/js/dashboard.js
+	new file:   public/js/session-view.js
+	new file:   public/js/session.js
+	new file:   public/js/utils.js
+	new file:   public/js/workspace.js
+	new file:   resources/views/api-docs.blade.php
+	modified:   resources/views/auth/dashboard.blade.php
+	modified:   resources/views/auth/list-workspace.blade.php
+	modified:   resources/views/auth/login.blade.php
+	modified:   resources/views/auth/register.blade.php
+	modified:   resources/views/auth/session-view.blade.php
+	modified:   resources/views/auth/session.blade.php
+	new file:   resources/views/components/footer.blade.php
+	new file:   resources/views/components/header.blade.php
+	new file:   resources/views/components/navbar.blade.php
+	new file:   resources/views/components/sidebar.blade.php
+	modified:   resources/views/home.blade.php
+	new file:   resources/views/layouts/app.blade.php
+	new file:   resources/views/layouts/guest.blade.php
+	modified:   routes/api.php
+	modified:   routes/web.php
+	new file:   tests/Feature/Api/Private/UserControllerTest.php
+	new file:   tests/Feature/Auth/UserControllerTest.php
+	modified:   tests/Feature/ExampleTest.php
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   app/Http/Controllers/Api/Private/UserController.php
+	modified:   app/Policies/ListPolicy.php
+	modified:   routes/api.php
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	status.txt
+

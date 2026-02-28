@@ -73,8 +73,10 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:100']
         ]);
 
+        $list = $request->user()->lists()->findOrFail($listId);
+
         $person = Person::create([
-            'list_id' => $listId,
+            'list_id' => $list->id,
             'name' => $validated['name']
         ]);
 
@@ -113,6 +115,7 @@ class UserController extends Controller
             $data = [];
 
             foreach ($validated['names'] as $name) {
+                // EXPLICIT MAPPING to prevent Mass Assignment vulnerability during insert
                 $data[] = [
                     'list_id'    => $list->id,
                     'name'       => trim($name),
@@ -133,9 +136,11 @@ class UserController extends Controller
 
     public function getPeople(Request $request, $listId)
     {
+        // Find owner's list first to prevent IDOR
         $list = $request->user()->lists()->findOrFail($listId);
 
-        $people = Person::where('list_id', $listId)->get();
+        // Now safe to query people for this validated list
+        $people = Person::where('list_id', $list->id)->get();
 
         return response()->json([
             'status' => true,
@@ -150,11 +155,13 @@ class UserController extends Controller
             'title' => 'required|string|max:255',
         ]);
 
+        $list = $request->user()->lists()->findOrFail($listId);
+
         $today = Carbon::today()->toDateString();
         $title = trim($request->title);
 
         // Check existing session
-        $session = PramanSession::where('list_id', $listId)
+        $session = PramanSession::where('list_id', $list->id)
             ->where('session_date', $today)
             ->where('title', $title)
             ->first();
@@ -162,14 +169,14 @@ class UserController extends Controller
         // If not exists → create
         if (!$session) {
             $session = PramanSession::create([
-                'list_id' => $listId,
+                'list_id' => $list->id,
                 'session_date' => $today,
                 'title' => $title,
                 'status' => 'active',
             ]);
 
             // 🔥 IMPORTANT PART — create attendance sheet
-            $peopleIds = Person::where('list_id', $listId)->pluck('id');
+            $peopleIds = Person::where('list_id', $list->id)->pluck('id');
 
             $rows = $peopleIds->map(function ($pid) use ($session) {
                 return [
@@ -189,9 +196,12 @@ class UserController extends Controller
         ]);
     }
 
-    public function getSessions($listId)
+    public function getSessions(Request $request, $listId)
     {
-        $sessions = PramanSession::where('list_id', $listId)
+        // Authenticate ownership first
+        $list = $request->user()->lists()->findOrFail($listId);
+
+        $sessions = PramanSession::where('list_id', $list->id)
             ->orderByDesc('session_date')
             ->orderByDesc('id')
             ->get(['id', 'title', 'session_date', 'status']);
@@ -201,9 +211,11 @@ class UserController extends Controller
         ]);
     }
 
-    public function getPeopleSession(PramanSession $session)
+    public function getPeopleSession(Request $request, PramanSession $session)
     {
         // Get all people of this session's list
+        $request->user()->lists()->findOrFail($session->list_id);
+
         $people = Person::where('list_id', $session->list_id)
             ->select('id', 'name')
             ->orderBy('name')
@@ -222,6 +234,8 @@ class UserController extends Controller
 
     public function storePresence(Request $request, PramanSession $session)
     {
+        $request->user()->lists()->findOrFail($session->list_id);
+
         // 1️⃣ Block closed session immediately (immutability rule)
         if ($session->status === 'closed') {
             return response()->json([
@@ -276,11 +290,14 @@ class UserController extends Controller
         ], 200);
     }
 
-    public function getSessionAttendance(string $id)
+    public function getSessionAttendance(Request $request, string $id)
     {
         // 1️⃣ Fetch session (authoritative)
-        $session = PramanSession::select('id', 'title', 'session_date', 'status')
+        $session = PramanSession::select('id', 'list_id', 'title', 'session_date', 'status')
             ->findOrFail($id);
+
+        // Ensure user actually owns the list this session belongs to
+        $request->user()->lists()->findOrFail($session->list_id);
 
         // 2️⃣ Fetch attendance WITHOUT joins (history-safe)
         $presences = Presence::select(
@@ -288,7 +305,7 @@ class UserController extends Controller
             'person_name',
             'is_present'
         )
-            ->where('praman_session_id', $id)
+            ->where('praman_session_id', $session->id)
             ->get();
 
         // 3️⃣ Map response (null-safe forever)
@@ -315,9 +332,11 @@ class UserController extends Controller
 
 
 
-    public function loadSessionNames(string $id)
+    public function loadSessionNames(Request $request, string $id)
     {
-        $sessions = PramanSession::where('list_id', $id)
+        $list = $request->user()->lists()->findOrFail($id);
+
+        $sessions = PramanSession::where('list_id', $list->id)
             ->select('id', 'title', 'session_date')
             ->orderBy('session_date', 'desc')
             ->get();
